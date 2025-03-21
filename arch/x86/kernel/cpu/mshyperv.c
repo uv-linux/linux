@@ -790,6 +790,27 @@ static int hv_resvd_ranges[HV_MAX_RESVD_RANGES] = {
 static struct resource hv_mshv_res[HV_MAX_RESVD_RANGES];
 static u32 ranges_nr;
 
+#if defined(CONFIG_HYPERV)
+bool heki_protect_pfn(unsigned long pfn)
+{
+	int i;
+
+	if (!hv_root_partition())
+		return true;
+
+	if (!page_is_ram(pfn))
+		return false;
+
+	for (i = 0; i < ranges_nr; i++) {
+		if (PHYS_PFN(hv_mshv_res[i].start) <= pfn &&
+		    pfn <= PHYS_PFN(hv_mshv_res[i].end))
+			return false;
+	}
+
+	return true;
+}
+#endif
+
 /*
  * Parse "hyperv_resvd_new=<size>!<address>,<size>!<address>,...", specifying a
  * list of memory ranges that are reserved by the loader for the hypervisor.
